@@ -613,7 +613,7 @@ with st.container():
 
 
 with st.container():
-    col1, col2, col3 = st.columns([4,0.1,4])
+    col1, col2 = st.columns([4,4])
 
     with col1:
         st.markdown(
@@ -629,7 +629,7 @@ with st.container():
                     <hr style="border: 1px solid {cor_azul}; margin-top: 0;">  """, unsafe_allow_html=True)
         create_bar_chart(database_flashscore_filtered2, 'First_Goal_Home', categories)
 
-    with col3:
+    with col2:
         st.markdown(
             f"""
                 <div style="background-color: white; color: black; padding: 10px; border-top-left-radius: 10px; border-top-right-radius: 10px;  ">
