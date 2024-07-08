@@ -26,7 +26,7 @@ with st.container():
         with col2:
             st.image("./Alexandre.png")
         with col3:
-            st.image("./BigDataBet.png")
+            st.image("./BigDataBet.jpeg")
         with col4:
             st.markdown(html_br, unsafe_allow_html=True)
 
@@ -37,9 +37,7 @@ database_flashscore = pd.read_csv(url_database_flashscore)
 database_flashscore['Date'] = pd.to_datetime(database_flashscore['Date']).dt.date
 
 league = sorted(set(database_flashscore['League'].tolist()))
-team_home = sorted(set(database_flashscore['Home'].tolist()))
-team_away = sorted(set(database_flashscore['Away'].tolist()))
-season = sorted(set(database_flashscore['Season'].tolist()))
+
 
 with st.container():
     col1, col2, col3, col4 = st.columns(4)
@@ -47,10 +45,16 @@ with st.container():
     with col1:
         selected_league = st.multiselect('Selecione a(s) liga(s):', league)
     with col2:
+        filtered_league = database_flashscore[database_flashscore['League'].isin(selected_league)]
+        team_home = sorted(set(filtered_league['Home'].tolist()))
         selected_team_home = st.multiselect('Selecione o(s) time(s) mandante(s):', team_home)
     with col3:
+        filtered_league = database_flashscore[database_flashscore['League'].isin(selected_league)]
+        team_away = sorted(set(filtered_league['Away'].tolist()))
         selected_team_away = st.multiselect('Selecione o(s) time(s) visitante(s):', team_away)
     with col4:
+        filtered_league = database_flashscore[database_flashscore['League'].isin(selected_league)]
+        season = sorted(set(filtered_league['Season'].tolist()))
         selected_season = st.multiselect('Selecione a(s) temporada(s):', season)
 
 min_date = database_flashscore['Date'].min()
