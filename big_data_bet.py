@@ -521,7 +521,7 @@ def calculate_stats(df):
 mean_home, std_home, mean_away, std_away = calculate_stats(database_flashscore_filtered2)
 
 with st.container():
-    col1, col2, col3, col4, col5 = st.columns([2,2,0.1,2,2])
+    col1, col2, col3, col4 = st.columns([2,2,2,2])
 
     with col1:
         st.markdown(
@@ -567,7 +567,7 @@ with st.container():
                     unsafe_allow_html=True
                 )
         
-    with col4:
+    with col3:
         st.markdown(
             f"""
                 <div style="background-color: white; color: black; padding: 10px; border-top-left-radius: 10px; border-top-right-radius: 10px;  ">
@@ -589,7 +589,7 @@ with st.container():
                     unsafe_allow_html=True
                 )
     
-    with col5:
+    with col4:
         st.markdown(
             f"""
                 <div style="background-color: white; color: black; padding: 10px; border-top-left-radius: 10px; border-top-right-radius: 10px;  ">
