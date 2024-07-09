@@ -46,15 +46,24 @@ with st.container():
         selected_league = st.multiselect('Selecione a(s) liga(s):', league)
     with col2:
         filtered_league = database_flashscore[database_flashscore['League'].isin(selected_league)]
-        team_home = sorted(set(filtered_league['Home'].tolist()))
+        if filtered_league.empty:
+            team_home = sorted(set(database_flashscore['Home'].tolist()))
+        else:
+            team_home = sorted(set(filtered_league['Home'].tolist()))
         selected_team_home = st.multiselect('Selecione o(s) time(s) mandante(s):', team_home)
     with col3:
         filtered_league = database_flashscore[database_flashscore['League'].isin(selected_league)]
-        team_away = sorted(set(filtered_league['Away'].tolist()))
+        if filtered_league.empty:
+            team_away = sorted(set(database_flashscore['Away'].tolist()))
+        else:
+            team_away = sorted(set(filtered_league['Away'].tolist()))
         selected_team_away = st.multiselect('Selecione o(s) time(s) visitante(s):', team_away)
     with col4:
         filtered_league = database_flashscore[database_flashscore['League'].isin(selected_league)]
-        season = sorted(set(filtered_league['Season'].tolist()))
+        if filtered_league.empty:
+            season = sorted(set(database_flashscore['Season'].tolist()))
+        else:
+            season = sorted(set(filtered_league['Season'].tolist()))
         selected_season = st.multiselect('Selecione a(s) temporada(s):', season)
 
 min_date = database_flashscore['Date'].min()
@@ -78,9 +87,14 @@ mask_season = database_flashscore['Season'].isin(selected_season) if selected_se
 mask_date = (database_flashscore['Date'] >= selected_min_date) & (database_flashscore['Date'] <= selected_max_date)
 
 database_flashscore_filtered = database_flashscore[mask_league & mask_team_home & mask_team_away & mask_season & mask_date]
+database_flashscore_filtered_league = database_flashscore[mask_league & mask_season & mask_date]
 
 database_flashscore_filtered['Goals_Minutes_Home'] = database_flashscore_filtered['Goals_Minutes_Home'].apply(lambda x: [] if x == '0' else eval(x))
 database_flashscore_filtered['Goals_Minutes_Away'] = database_flashscore_filtered['Goals_Minutes_Away'].apply(lambda x: [] if x == '0' else eval(x))
+
+database_flashscore_filtered_league['Goals_Minutes_Home'] = database_flashscore_filtered_league['Goals_Minutes_Home'].apply(lambda x: [] if x == '0' else eval(x))
+database_flashscore_filtered_league['Goals_Minutes_Away'] = database_flashscore_filtered_league['Goals_Minutes_Away'].apply(lambda x: [] if x == '0' else eval(x))
+
 
 def mark_goal_sequence(row):
     sequence = ''
@@ -103,6 +117,8 @@ def mark_goal_sequence(row):
 
 database_flashscore_filtered['Goal_Sequence'] = database_flashscore_filtered.apply(mark_goal_sequence, axis=1)
 
+database_flashscore_filtered_league['Goal_Sequence'] = database_flashscore_filtered_league.apply(mark_goal_sequence, axis=1)
+
 def create_goal_columns(row, index):
     goal_sequence = row['Goal_Sequence']
     
@@ -119,6 +135,11 @@ database_flashscore_filtered['1º gol'] = database_flashscore_filtered.apply(lam
 database_flashscore_filtered['2º gol'] = database_flashscore_filtered.apply(lambda row: create_goal_columns(row, 1), axis=1)
 database_flashscore_filtered['3º gol'] = database_flashscore_filtered.apply(lambda row: create_goal_columns(row, 2), axis=1)
 database_flashscore_filtered['4º gol'] = database_flashscore_filtered.apply(lambda row: create_goal_columns(row, 3), axis=1)
+
+database_flashscore_filtered_league['1º gol'] = database_flashscore_filtered_league.apply(lambda row: create_goal_columns(row, 0), axis=1)
+database_flashscore_filtered_league['2º gol'] = database_flashscore_filtered_league.apply(lambda row: create_goal_columns(row, 1), axis=1)
+database_flashscore_filtered_league['3º gol'] = database_flashscore_filtered_league.apply(lambda row: create_goal_columns(row, 2), axis=1)
+database_flashscore_filtered_league['4º gol'] = database_flashscore_filtered_league.apply(lambda row: create_goal_columns(row, 3), axis=1)
 
 first_goal_filter = ['Todos'] + sorted(set(database_flashscore_filtered['1º gol'].tolist()))
 second_goal_filter = ['Todos'] + sorted(set(database_flashscore_filtered['2º gol'].tolist()))
@@ -139,23 +160,31 @@ with st.container():
 
 if selected_1st_goal == 'Todos':
     mask_1st_goal = database_flashscore_filtered['1º gol'].notnull()
+    mask_1st_goal_league = database_flashscore_filtered_league['1º gol'].notnull()
 else:
     mask_1st_goal = database_flashscore_filtered['1º gol'] == selected_1st_goal
+    mask_1st_goal_league = database_flashscore_filtered_league['1º gol'] == selected_1st_goal
 
 if selected_2nd_goal == 'Todos':
     mask_2nd_goal = database_flashscore_filtered['2º gol'].notnull()
+    mask_2nd_goal_league = database_flashscore_filtered_league['2º gol'].notnull()
 else:
     mask_2nd_goal = database_flashscore_filtered['2º gol'] == selected_2nd_goal
+    mask_2nd_goal_league = database_flashscore_filtered_league['2º gol'] == selected_2nd_goal
 
 if selected_3rd_goal == 'Todos':
     mask_3rd_goal = database_flashscore_filtered['3º gol'].notnull()
+    mask_3rd_goal_league = database_flashscore_filtered_league['3º gol'].notnull()
 else:
     mask_3rd_goal = database_flashscore_filtered['3º gol'] == selected_3rd_goal
+    mask_3rd_goal_league = database_flashscore_filtered_league['3º gol'] == selected_3rd_goal
 
 if selected_4th_goal == 'Todos':
     mask_4th_goal = database_flashscore_filtered['4º gol'].notnull()
+    mask_4th_goal_league = database_flashscore_filtered_league['4º gol'].notnull()
 else:
     mask_4th_goal = database_flashscore_filtered['4º gol'] == selected_4th_goal
+    mask_4th_goal_league = database_flashscore_filtered_league['4º gol'] == selected_4th_goal
 
 selected_1st_goal = [selected_1st_goal] if selected_1st_goal else first_goal_filter
 selected_2nd_goal = [selected_2nd_goal] if selected_2nd_goal else second_goal_filter
@@ -170,33 +199,44 @@ with st.container():
         max_odd_home = np.float64(database_flashscore['Odd_H'].max())
 
         selected_min_odd_home, selected_max_odd_home = st.slider("Selecione o intervalo da Odd Home:",
-                                                                min_value=float(min_odd_home),
-                                                                max_value=float(max_odd_home),
-                                                                value=(float(min_odd_home), float(max_odd_home)))
+                                                                min_value=1.00,
+                                                                max_value=9.00,
+                                                                value=(1.00, 9.00))
         
     with col3:
         min_odd_away = np.float64(database_flashscore['Odd_A'].min())
         max_odd_away = np.float64(database_flashscore['Odd_A'].max())
 
         selected_min_odd_away, selected_max_odd_away = st.slider("Selecione o intervalo da Odd Away:",
-                                                                min_value=float(min_odd_away),
-                                                                max_value=float(max_odd_away),
-                                                                value=(float(min_odd_away), float(max_odd_away)))
+                                                                min_value=1.00,
+                                                                max_value=9.00,
+                                                                value=(1.00, 9.00))
         
     with col5:
         min_odd_over25 = np.float64(database_flashscore['Odd_Over25'].min())
         max_odd_over25 = np.float64(database_flashscore['Odd_Over25'].max())
 
         selected_min_odd_over25, selected_max_odd_over25 = st.slider("Selecione o intervalo da Odd Over 2.5 gols:",
-                                                                min_value=float(min_odd_over25),
+                                                                min_value=1.00,
                                                                 max_value=float(max_odd_over25),
-                                                                value=(float(min_odd_over25), float(max_odd_over25)))
+                                                                value=(1.00, float(max_odd_over25)))
 
-mask_odd_home = (database_flashscore_filtered['Odd_H'] >= selected_min_odd_home) & (database_flashscore_filtered['Odd_H'] <= selected_max_odd_home)
-mask_odd_away = (database_flashscore_filtered['Odd_A'] >= selected_min_odd_away) & (database_flashscore_filtered['Odd_A'] <= selected_max_odd_away)
+final_max_odd_home = selected_max_odd_home if selected_max_odd_home != 9 else max_odd_home
+mask_odd_home = (database_flashscore_filtered['Odd_H'] >= selected_min_odd_home) & (database_flashscore_filtered['Odd_H'] <= final_max_odd_home)
+
+final_max_odd_away = selected_max_odd_away if selected_max_odd_away != 9 else max_odd_away
+mask_odd_away = (database_flashscore_filtered['Odd_A'] >= selected_min_odd_away) & (database_flashscore_filtered['Odd_A'] <= final_max_odd_away)
+
+#mask_odd_home = (database_flashscore_filtered['Odd_H'] >= selected_min_odd_home) & (database_flashscore_filtered['Odd_H'] <= selected_max_odd_home)
+#mask_odd_away = (database_flashscore_filtered['Odd_A'] >= selected_min_odd_away) & (database_flashscore_filtered['Odd_A'] <= selected_max_odd_away)
 mask_odd_over25 = (database_flashscore_filtered['Odd_Over25'] >= selected_min_odd_over25) & (database_flashscore_filtered['Odd_Over25'] <= selected_max_odd_over25)
 
+mask_odd_home_league = (database_flashscore_filtered_league['Odd_H'] >= selected_min_odd_home) & (database_flashscore_filtered_league['Odd_H'] <= final_max_odd_home)
+mask_odd_away_league = (database_flashscore_filtered_league['Odd_A'] >= selected_min_odd_away) & (database_flashscore_filtered_league['Odd_A'] <= final_max_odd_away)
+mask_odd_over25_league = (database_flashscore_filtered_league['Odd_Over25'] >= selected_min_odd_over25) & (database_flashscore_filtered_league['Odd_Over25'] <= selected_max_odd_over25)
+
 database_flashscore_filtered2 = database_flashscore_filtered[mask_1st_goal & mask_2nd_goal & mask_3rd_goal & mask_4th_goal & mask_odd_home & mask_odd_away & mask_odd_over25]
+database_flashscore_filtered_league2 = database_flashscore_filtered_league[mask_1st_goal_league & mask_2nd_goal_league & mask_3rd_goal_league & mask_4th_goal_league & mask_odd_home_league & mask_odd_away_league & mask_odd_over25_league]
 
 # Contagem de gols por categoria
 count_1st_home = database_flashscore_filtered2['1º gol'].value_counts().get('Home', 0)
@@ -215,8 +255,29 @@ count_4th_home = database_flashscore_filtered2['4º gol'].value_counts().get('Ho
 count_4th_away = database_flashscore_filtered2['4º gol'].value_counts().get('Away', 0)
 count_4th_none = database_flashscore_filtered2['4º gol'].value_counts().get('Nenhum', 0)
 
+# Contagem de gols por categoria nas ligas selecionadas
+
+count_1st_home_league = database_flashscore_filtered_league2['1º gol'].value_counts().get('Home', 0)
+count_1st_away_league = database_flashscore_filtered_league2['1º gol'].value_counts().get('Away', 0)
+count_1st_none_league = database_flashscore_filtered_league2['1º gol'].value_counts().get('Nenhum', 0)
+
+count_2nd_home_league = database_flashscore_filtered_league2['2º gol'].value_counts().get('Home', 0)
+count_2nd_away_league = database_flashscore_filtered_league2['2º gol'].value_counts().get('Away', 0)
+count_2nd_none_league = database_flashscore_filtered_league2['2º gol'].value_counts().get('Nenhum', 0)
+
+count_3rd_home_league = database_flashscore_filtered_league2['3º gol'].value_counts().get('Home', 0)
+count_3rd_away_league = database_flashscore_filtered_league2['3º gol'].value_counts().get('Away', 0)
+count_3rd_none_league = database_flashscore_filtered_league2['3º gol'].value_counts().get('Nenhum', 0)
+
+count_4th_home_league = database_flashscore_filtered_league2['4º gol'].value_counts().get('Home', 0)
+count_4th_away_league = database_flashscore_filtered_league2['4º gol'].value_counts().get('Away', 0)
+count_4th_none_league = database_flashscore_filtered_league2['4º gol'].value_counts().get('Nenhum', 0)
+
 # Total de jogos
 total_games = len(database_flashscore_filtered2)
+
+# Total de jogos liga
+total_games_league = len(database_flashscore_filtered_league2)
 
 # Calculando as porcentagens
 percent_1st_home = (count_1st_home / total_games) * 100
@@ -235,6 +296,23 @@ percent_4th_home = (count_4th_home / total_games) * 100
 percent_4th_away = (count_4th_away / total_games) * 100
 percent_4th_none = (count_4th_none / total_games) * 100
 
+# Calculando as porcentagens das ligas
+percent_1st_home_league = (count_1st_home_league / total_games_league) * 100
+percent_1st_away_league = (count_1st_away_league / total_games_league) * 100
+percent_1st_none_league = (count_1st_none_league / total_games_league) * 100
+
+percent_2nd_home_league = (count_2nd_home_league / total_games_league) * 100
+percent_2nd_away_league = (count_2nd_away_league / total_games_league) * 100
+percent_2nd_none_league = (count_2nd_none_league / total_games_league) * 100
+
+percent_3rd_home_league = (count_3rd_home_league / total_games_league) * 100
+percent_3rd_away_league = (count_3rd_away_league / total_games_league) * 100
+percent_3rd_none_league = (count_3rd_none_league / total_games_league) * 100
+
+percent_4th_home_league = (count_4th_home_league / total_games_league) * 100
+percent_4th_away_league = (count_4th_away_league / total_games_league) * 100
+percent_4th_none_league = (count_4th_none_league / total_games_league) * 100
+
 # Criando os gráficos com Plotly
 fig_1st = go.Figure()
 fig_1st.add_trace(go.Bar(y=['Home', 'Away', 'Nenhum'],
@@ -245,6 +323,35 @@ fig_1st.add_trace(go.Bar(y=['Home', 'Away', 'Nenhum'],
                          textposition='auto',
                          textangle = 0,
                          marker=dict(color=[cor_azul, cor_vermelho, cor_preto])))
+
+average_values_1st = [percent_1st_home_league, percent_1st_away_league, percent_1st_none_league]
+
+show_average_line = (len(selected_team_home) > 0 or len(selected_team_away) > 0)
+
+if show_average_line:
+
+    # Adicionando as linhas verticais para as médias gerais
+    for idx, avg in enumerate(average_values_1st):
+        # Ajustando as coordenadas y0 e y1 para que a linha vertical se ajuste à respectiva categoria
+        y0 = idx - 0.4  # Posição inicial da linha vertical
+        y1 = idx + 0.4  # Posição final da linha vertical
+        
+        fig_1st.add_shape(
+            type="line",
+            x0=avg, y0=y0, x1=avg, y1=y1,  # Definindo a posição da linha vertical
+            line=dict(color='black', width=2),  # Linha vertical preta
+            name=f'Average: {avg:.2f}',
+            xref='x', yref='y'
+        )
+
+        fig_1st.add_annotation(
+            x=avg,
+            y=y1 + 0.1,  # Posição acima da linha vertical
+            text=f'{avg:.2f}%',  # Mostrar o valor como percentual com duas casas decimais
+            showarrow=False,
+            font=dict(color='black'),
+            xshift=10,  # Ajuste de posição horizontal para o valor ficar ao lado da linha
+        )
 
 fig_1st.update_layout(height=400, xaxis_title='Porcentagem (%)',
                       xaxis=dict(range=[0, 100]))
@@ -259,6 +366,35 @@ fig_2nd.add_trace(go.Bar(y=['Home', 'Away', 'Nenhum'],
                          textangle = 0,
                          marker=dict(color=[cor_azul, cor_vermelho, cor_preto])))
 
+average_values_2nd = [percent_2nd_home_league, percent_2nd_away_league, percent_2nd_none_league]
+
+show_average_line = (len(selected_team_home) > 0 or len(selected_team_away) > 0)
+
+if show_average_line:
+
+    # Adicionando as linhas verticais para as médias gerais
+    for idx, avg in enumerate(average_values_2nd):
+        # Ajustando as coordenadas y0 e y1 para que a linha vertical se ajuste à respectiva categoria
+        y0 = idx - 0.4  # Posição inicial da linha vertical
+        y1 = idx + 0.4  # Posição final da linha vertical
+        
+        fig_2nd.add_shape(
+            type="line",
+            x0=avg, y0=y0, x1=avg, y1=y1,  # Definindo a posição da linha vertical
+            line=dict(color='black', width=2),  # Linha vertical preta
+            name=f'Average: {avg:.2f}',
+            xref='x', yref='y'
+        )
+
+        fig_2nd.add_annotation(
+            x=avg,
+            y=y1 + 0.1,  # Posição acima da linha vertical
+            text=f'{avg:.2f}%',  # Mostrar o valor como percentual com duas casas decimais
+            showarrow=False,
+            font=dict(color='black'),
+            xshift=10,  # Ajuste de posição horizontal para o valor ficar ao lado da linha
+        )
+
 fig_2nd.update_layout(height=400, xaxis_title='Porcentagem (%)',
                       xaxis=dict(range=[0, 100]))
 
@@ -272,6 +408,35 @@ fig_3rd.add_trace(go.Bar(y=['Home', 'Away', 'Nenhum'],
                          textangle = 0,
                          marker=dict(color=[cor_azul, cor_vermelho, cor_preto])))
 
+average_values_3rd = [percent_3rd_home_league, percent_3rd_away_league, percent_3rd_none_league]
+
+show_average_line = (len(selected_team_home) > 0 or len(selected_team_away) > 0)
+
+if show_average_line:
+
+    # Adicionando as linhas verticais para as médias gerais
+    for idx, avg in enumerate(average_values_3rd):
+        # Ajustando as coordenadas y0 e y1 para que a linha vertical se ajuste à respectiva categoria
+        y0 = idx - 0.4  # Posição inicial da linha vertical
+        y1 = idx + 0.4  # Posição final da linha vertical
+        
+        fig_3rd.add_shape(
+            type="line",
+            x0=avg, y0=y0, x1=avg, y1=y1,  # Definindo a posição da linha vertical
+            line=dict(color='black', width=2),  # Linha vertical preta
+            name=f'Average: {avg:.2f}',
+            xref='x', yref='y'
+        )
+
+        fig_3rd.add_annotation(
+            x=avg,
+            y=y1 + 0.1,  # Posição acima da linha vertical
+            text=f'{avg:.2f}%',  # Mostrar o valor como percentual com duas casas decimais
+            showarrow=False,
+            font=dict(color='black'),
+            xshift=10,  # Ajuste de posição horizontal para o valor ficar ao lado da linha
+        )
+
 fig_3rd.update_layout(height=400, xaxis_title='Porcentagem (%)',
                       xaxis=dict(range=[0, 100]))
 
@@ -284,6 +449,35 @@ fig_4th.add_trace(go.Bar(y=['Home', 'Away', 'Nenhum'],
                          textposition='auto',
                          textangle = 0,
                          marker=dict(color=[cor_azul, cor_vermelho, cor_preto])))
+
+average_values_4th = [percent_4th_home_league, percent_4th_away_league, percent_4th_none_league]
+
+show_average_line = (len(selected_team_home) > 0 or len(selected_team_away) > 0)
+
+if show_average_line:
+
+    # Adicionando as linhas verticais para as médias gerais
+    for idx, avg in enumerate(average_values_4th):
+        # Ajustando as coordenadas y0 e y1 para que a linha vertical se ajuste à respectiva categoria
+        y0 = idx - 0.4  # Posição inicial da linha vertical
+        y1 = idx + 0.4  # Posição final da linha vertical
+        
+        fig_4th.add_shape(
+            type="line",
+            x0=avg, y0=y0, x1=avg, y1=y1,  # Definindo a posição da linha vertical
+            line=dict(color='black', width=2),  # Linha vertical preta
+            name=f'Average: {avg:.2f}',
+            xref='x', yref='y'
+        )
+
+        fig_4th.add_annotation(
+            x=avg,
+            y=y1 + 0.1,  # Posição acima da linha vertical
+            text=f'{avg:.2f}%',  # Mostrar o valor como percentual com duas casas decimais
+            showarrow=False,
+            font=dict(color='black'),
+            xshift=10,  # Ajuste de posição horizontal para o valor ficar ao lado da linha
+        )
 
 fig_4th.update_layout(height=400, xaxis_title='Porcentagem (%)',
                       xaxis=dict(range=[0, 100]))
@@ -304,6 +498,14 @@ with st.container():
 
         st.markdown(f"""
                     <hr style="border: 1px solid {cor_azul}; margin-top: 0;">  """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div style="background-color: white; color: black; padding: 10px; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; font-size: smaller; margin-top: -25px;">
+                A linha vertical em preto representa a média das ligas selecionadas.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         
         st.plotly_chart(fig_1st, use_container_width=True)
 
@@ -318,6 +520,14 @@ with st.container():
 
         st.markdown(f"""
                     <hr style="border: 1px solid {cor_azul}; margin-top: 0;">  """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div style="background-color: white; color: black; padding: 10px; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; font-size: smaller; margin-top: -25px;">
+                A linha vertical em preto representa a média das ligas selecionadas.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         st.plotly_chart(fig_3rd, use_container_width=True)
     with col2:
@@ -333,6 +543,14 @@ with st.container():
 
         st.markdown(f"""
                     <hr style="border: 1px solid {cor_azul}; margin-top: 0;">  """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div style="background-color: white; color: black; padding: 10px; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; font-size: smaller; margin-top: -25px;">
+                A linha vertical em preto representa a média das ligas selecionadas.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         st.plotly_chart(fig_2nd, use_container_width=True)
 
@@ -347,6 +565,14 @@ with st.container():
 
         st.markdown(f"""
                     <hr style="border: 1px solid {cor_azul}; margin-top: 0;">  """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div style="background-color: white; color: black; padding: 10px; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; font-size: smaller; margin-top: -25px;">
+                A linha vertical em preto representa a média das ligas selecionadas.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         st.plotly_chart(fig_4th, use_container_width=True)
 
