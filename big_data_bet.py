@@ -642,6 +642,9 @@ def determine_first_goal_range(row, coluna):
 database_flashscore_filtered2['First_Goal_Home'] = database_flashscore_filtered2.apply(lambda row: determine_first_goal_range(row, 'Goals_Minutes_Home'), axis=1)
 database_flashscore_filtered2['First_Goal_Away'] = database_flashscore_filtered2.apply(lambda row: determine_first_goal_range(row, 'Goals_Minutes_Away'), axis=1)
 
+database_flashscore_filtered_league2['First_Goal_Home'] = database_flashscore_filtered_league2.apply(lambda row: determine_first_goal_range(row, 'Goals_Minutes_Home'), axis=1)
+database_flashscore_filtered_league2['First_Goal_Away'] = database_flashscore_filtered_league2.apply(lambda row: determine_first_goal_range(row, 'Goals_Minutes_Away'), axis=1)
+
 cores = {
     'Result': {'Home': cor_azul, 'Away': cor_vermelho, 'Draw': cor_preto},
     'Over/Under 2,5': {'Over 2,5': cor_azul, 'Under 2,5': cor_vermelho},
@@ -724,6 +727,7 @@ def create_bar_chart(data, column_name, categories):
     
     # Criação do gráfico de colunas com valores nas barras
     fig = go.Figure(data=[go.Bar(x=categories, y=counts, text=text_values, textposition='auto', marker_color=cor_azul)])
+    #fig.update_yaxes(range=[0, 100], autorange=False)
     fig.update_layout(xaxis_title='Intervalo de Minutos', yaxis_title='Número de Jogos')
     st.plotly_chart(fig, use_container_width=True)
 
@@ -857,6 +861,7 @@ with st.container():
 
         st.markdown(f"""
                     <hr style="border: 1px solid {cor_azul}; margin-top: 0;">  """, unsafe_allow_html=True)
+        
         create_bar_chart(database_flashscore_filtered2, 'First_Goal_Home', categories)
 
     with col2:
@@ -871,7 +876,144 @@ with st.container():
 
         st.markdown(f"""
                     <hr style="border: 1px solid {cor_azul}; margin-top: 0;">  """, unsafe_allow_html=True)
+
         create_bar_chart(database_flashscore_filtered2, 'First_Goal_Away', categories)
+
+categories_accu = {
+    '0 - 15': ['Até 15', 'Até 30', 'Até 45', 'Até 60', 'Até 75', 'Até 90'],
+    '16 - 30': ['Até 30', 'Até 45', 'Até 60', 'Até 75', 'Até 90'],
+    '31 - 45': ['Até 45', 'Até 60', 'Até 75', 'Até 90'],
+    '46 - 60': ['Até 60', 'Até 75', 'Até 90'],
+    '61 - 75': ['Até 75', 'Até 90'],
+    '76 - 90': ['Até 90'],
+    'No Goals': []
+}
+
+def map_categories(goal_category):
+    return categories_accu.get(goal_category, [])
+
+# Criando as colunas 'Home' e 'Away' com listas de categorias acumuladas
+database_flashscore_filtered2['First_Goal_Home_Accu'] = database_flashscore_filtered2['First_Goal_Home'].apply(map_categories)
+database_flashscore_filtered2['First_Goal_Away_Accu'] = database_flashscore_filtered2['First_Goal_Away'].apply(map_categories)
+
+database_flashscore_filtered_league2['First_Goal_Home_Accu'] = database_flashscore_filtered_league2['First_Goal_Home'].apply(map_categories)
+database_flashscore_filtered_league2['First_Goal_Away_Accu'] = database_flashscore_filtered_league2['First_Goal_Away'].apply(map_categories)
+
+def count_categories(df, column_name, all_categories):
+    counts = {cat: 0 for cat in all_categories}
+    for row in df[column_name]:
+        for cat in row:
+            counts[cat] += 1
+    return counts
+
+# Definindo todas as categorias possíveis
+all_categories = ['Até 15', 'Até 30', 'Até 45', 'Até 60', 'Até 75', 'Até 90']
+
+def create_bar_chart2(df1, df2, column_name, show_average_line):
+    # Contagem e porcentagem para o primeiro DataFrame
+    counts1 = count_categories(df1, column_name, all_categories)
+    total_lines1 = len(df1)
+    percentages1 = {cat: (count / total_lines1) * 100 for cat, count in counts1.items()}
+    
+    categories_sorted = sorted(all_categories, key=lambda x: int(x.split(' ')[1]))
+    counts_sorted1 = [percentages1[cat] for cat in categories_sorted]
+    
+    # Criando o gráfico de barras para o primeiro DataFrame
+    fig = go.Figure()
+    
+    # Adicionando as barras verticais para o primeiro DataFrame
+    fig.add_trace(go.Bar(x=categories_sorted, y=counts_sorted1, text=[f'{val:.1f}%' for val in counts_sorted1], textposition='auto', 
+                         marker_color=cor_azul, name='Porcentagem - DF1'))
+    
+    if show_average_line:
+
+        # Contagem para o segundo DataFrame
+        counts2 = count_categories(df2, column_name, all_categories)
+        total_lines2 = len(df2)
+        
+        # Calculando a média para o segundo DataFrame
+        mean_values2 = {cat: (count / total_lines2) * 100 for cat, count in counts2.items()}
+        
+        # Adicionando as linhas horizontais para cada categoria do segundo DataFrame
+        for cat in categories_sorted:
+            mean_value = mean_values2.get(cat, 0)  # Valor médio ou 0 se não houver dados
+            
+            # Encontrando a posição do início e fim da linha horizontal
+            x_start = categories_sorted.index(cat) - 0.4
+            x_end = categories_sorted.index(cat) + 0.4
+            
+            fig.add_shape(type="line",
+                        x0=x_start, y0=mean_value,  # Início da linha horizontal
+                        x1=x_end, y1=mean_value,  # Fim da linha horizontal
+                        line=dict(color="black", width=2),
+                        name=f'Média - {cat}', 
+                        xref='x', yref='y')
+            
+        
+            fig.add_annotation(
+                x=x_end + 0.1,  # Posição central entre o início e fim da linha
+                y=mean_value,  # Posição da linha horizontal
+                text=f'{mean_value:.1f}%',  # Texto formatado com duas casas decimais
+                showarrow=False,
+                font=dict(color='black'),
+                yshift=10,  # Ajuste de posição vertical para o texto ficar abaixo da linha
+            )
+    
+    # Configurando layout do gráfico
+    fig.update_layout(xaxis_title='Intervalo de Minutos', yaxis_title='Porcentagem de Jogos', yaxis=dict(range=[0, 100]))
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+with st.container():
+    col1, col2 = st.columns([4,4])
+
+    with col1:
+        st.markdown(
+            f"""
+                <div style="background-color: white; color: black; padding: 10px; border-top-left-radius: 10px; border-top-right-radius: 10px;  ">
+                    <strong>Porcentagem de jogos com 1º gol Home até dado momento</strong>
+                        </div>
+                    """,
+                    unsafe_allow_html=True
+            )
+
+        st.markdown(f"""
+                    <hr style="border: 1px solid {cor_azul}; margin-top: 0;">  """, unsafe_allow_html=True)
+        
+        st.markdown(
+            """
+            <div style="background-color: white; color: black; padding: 10px; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; font-size: smaller; margin-top: -25px;">
+                A linha horizontal em preto representa a média das ligas selecionadas.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        create_bar_chart2(database_flashscore_filtered2, database_flashscore_filtered_league2, 'First_Goal_Home_Accu', show_average_line)
+
+    with col2:
+        st.markdown(
+            f"""
+                <div style="background-color: white; color: black; padding: 10px; border-top-left-radius: 10px; border-top-right-radius: 10px;  ">
+                    <strong>Porcentagem de jogos com 1º gol Away até dado momento</strong>
+                        </div>
+                    """,
+                    unsafe_allow_html=True
+            )
+
+        st.markdown(f"""
+                    <hr style="border: 1px solid {cor_azul}; margin-top: 0;">  """, unsafe_allow_html=True)
+        
+        st.markdown(
+            """
+            <div style="background-color: white; color: black; padding: 10px; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; font-size: smaller; margin-top: -25px;">
+                A linha horizontal em preto representa a média das ligas selecionadas.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        create_bar_chart2(database_flashscore_filtered2, database_flashscore_filtered_league2, 'First_Goal_Away_Accu', show_average_line)
 
 
         
