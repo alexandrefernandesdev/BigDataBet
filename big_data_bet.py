@@ -38,38 +38,86 @@ database_flashscore['Date'] = pd.to_datetime(database_flashscore['Date']).dt.dat
 
 league = sorted(set(database_flashscore['League'].tolist()))
 
+# Sessão de Estado para armazenar os valores selecionados
+if 'selected_league' not in st.session_state:
+    st.session_state.selected_league = []
+
+if 'selected_team_home' not in st.session_state:
+    st.session_state.selected_team_home = []
+
+if 'selected_team_away' not in st.session_state:
+    st.session_state.selected_team_away = []
+
+if 'selected_season' not in st.session_state:
+    st.session_state.selected_season = []
+
+if 'selected_min_date' not in st.session_state:
+    st.session_state.selected_min_date = None
+
+if 'selected_max_date' not in st.session_state:
+    st.session_state.selected_max_date = None
+
+if 'selected_1st_goal' not in st.session_state:
+    st.session_state.selected_1st_goal = 'Todos'
+
+if 'selected_2nd_goal' not in st.session_state:
+    st.session_state.selected_2nd_goal = 'Todos'
+
+if 'selected_3rd_goal' not in st.session_state:
+    st.session_state.selected_3rd_goal = 'Todos'
+
+if 'selected_4th_goal' not in st.session_state:
+    st.session_state.selected_4th_goal = 'Todos'
+
+if 'selected_min_odd_home' not in st.session_state:
+    st.session_state.selected_min_odd_home = 1.00
+
+if 'selected_max_odd_home' not in st.session_state:
+    st.session_state.selected_max_odd_home = 9.00
+
+if 'selected_min_odd_away' not in st.session_state:
+    st.session_state.selected_min_odd_away = 1.00
+
+if 'selected_max_odd_away' not in st.session_state:
+    st.session_state.selected_max_odd_away = 9.00
+
+if 'selected_min_odd_over25' not in st.session_state:
+    st.session_state.selected_min_odd_over25 = 1.00
+
+if 'selected_max_odd_over25' not in st.session_state:
+    st.session_state.selected_max_odd_over25 = 9.00
 
 with st.container():
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        selected_league = st.multiselect('Selecione a(s) liga(s):', league)
+        st.session_state.selected_league = st.multiselect('Selecione a(s) liga(s):', league)
     with col2:
-        filtered_league = database_flashscore[database_flashscore['League'].isin(selected_league)]
+        filtered_league = database_flashscore[database_flashscore['League'].isin(st.session_state.selected_league)]
         if filtered_league.empty:
             team_home = sorted(set(database_flashscore['Home'].tolist()))
         else:
             team_home = sorted(set(filtered_league['Home'].tolist()))
-        selected_team_home = st.multiselect('Selecione o(s) time(s) mandante(s):', team_home)
+        st.session_state.selected_team_home = st.multiselect('Selecione o(s) time(s) mandante(s):', team_home)
     with col3:
-        filtered_league = database_flashscore[database_flashscore['League'].isin(selected_league)]
+        filtered_league = database_flashscore[database_flashscore['League'].isin(st.session_state.selected_league)]
         if filtered_league.empty:
             team_away = sorted(set(database_flashscore['Away'].tolist()))
         else:
             team_away = sorted(set(filtered_league['Away'].tolist()))
-        selected_team_away = st.multiselect('Selecione o(s) time(s) visitante(s):', team_away)
+        st.session_state.selected_team_away = st.multiselect('Selecione o(s) time(s) visitante(s):', team_away)
     with col4:
-        filtered_league = database_flashscore[database_flashscore['League'].isin(selected_league)]
+        filtered_league = database_flashscore[database_flashscore['League'].isin(st.session_state.selected_league)]
         if filtered_league.empty:
             season = sorted(set(database_flashscore['Season'].tolist()))
         else:
             season = sorted(set(filtered_league['Season'].tolist()))
-        selected_season = st.multiselect('Selecione a(s) temporada(s):', season)
+        st.session_state.selected_season = st.multiselect('Selecione a(s) temporada(s):', season)
 
 min_date = database_flashscore['Date'].min()
 max_date = database_flashscore['Date'].max()
 
-selected_min_date, selected_max_date = st.slider("Selecione o intervalo de datas:",
+st.session_state.selected_min_date, st.session_state.selected_max_date = st.slider("Selecione o intervalo de datas:",
                                                 min_value=min_date,
                                                 max_value=max_date,
                                                 value=(min_date, max_date),
@@ -77,14 +125,14 @@ selected_min_date, selected_max_date = st.slider("Selecione o intervalo de datas
                                                 key="slider1" )
 
 total_days = (max_date - min_date).days
-selected_days = (selected_min_date - min_date).days
+selected_days = (st.session_state.selected_min_date - min_date).days
 percentage = (selected_days / total_days) * 100
 
-mask_league = database_flashscore['League'].isin(selected_league) if selected_league else database_flashscore['League'].notnull()
-mask_team_home = database_flashscore['Home'].isin(selected_team_home) if selected_team_home else database_flashscore['Home'].notnull()
-mask_team_away = database_flashscore['Away'].isin(selected_team_away) if selected_team_away else database_flashscore['Away'].notnull()
-mask_season = database_flashscore['Season'].isin(selected_season) if selected_season else database_flashscore['Season'].notnull()
-mask_date = (database_flashscore['Date'] >= selected_min_date) & (database_flashscore['Date'] <= selected_max_date)
+mask_league = database_flashscore['League'].isin(st.session_state.selected_league) if st.session_state.selected_league else database_flashscore['League'].notnull()
+mask_team_home = database_flashscore['Home'].isin(st.session_state.selected_team_home) if st.session_state.selected_team_home else database_flashscore['Home'].notnull()
+mask_team_away = database_flashscore['Away'].isin(st.session_state.selected_team_away) if st.session_state.selected_team_away else database_flashscore['Away'].notnull()
+mask_season = database_flashscore['Season'].isin(st.session_state.selected_season) if st.session_state.selected_season else database_flashscore['Season'].notnull()
+mask_date = (database_flashscore['Date'] >= st.session_state.selected_min_date) & (database_flashscore['Date'] <= st.session_state.selected_max_date)
 
 database_flashscore_filtered = database_flashscore[mask_league & mask_team_home & mask_team_away & mask_season & mask_date]
 database_flashscore_filtered_league = database_flashscore[mask_league & mask_season & mask_date]
@@ -150,55 +198,55 @@ with st.container():
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        selected_1st_goal = st.radio('1º gol:', first_goal_filter)
+        st.session_state.selected_1st_goal = st.radio('1º gol:', first_goal_filter)
     with col2:
-        selected_2nd_goal = st.radio('2º gol:', second_goal_filter)
+        st.session_state.selected_2nd_goal = st.radio('2º gol:', second_goal_filter)
     with col3:
-        selected_3rd_goal = st.radio('3º gol:', third_goal_filter)
+        st.session_state.selected_3rd_goal = st.radio('3º gol:', third_goal_filter)
     with col4:
-        selected_4th_goal = st.radio('4º gol:', fourth_goal_filter)
+        st.session_state.selected_4th_goal = st.radio('4º gol:', fourth_goal_filter)
 
-if selected_1st_goal == 'Todos':
+if st.session_state.selected_1st_goal == 'Todos':
     mask_1st_goal = database_flashscore_filtered['1º gol'].notnull()
     mask_1st_goal_league = database_flashscore_filtered_league['1º gol'].notnull()
 else:
-    mask_1st_goal = database_flashscore_filtered['1º gol'] == selected_1st_goal
-    mask_1st_goal_league = database_flashscore_filtered_league['1º gol'] == selected_1st_goal
+    mask_1st_goal = database_flashscore_filtered['1º gol'] == st.session_state.selected_1st_goal
+    mask_1st_goal_league = database_flashscore_filtered_league['1º gol'] == st.session_state.selected_1st_goal
 
-if selected_2nd_goal == 'Todos':
+if st.session_state.selected_2nd_goal == 'Todos':
     mask_2nd_goal = database_flashscore_filtered['2º gol'].notnull()
     mask_2nd_goal_league = database_flashscore_filtered_league['2º gol'].notnull()
 else:
-    mask_2nd_goal = database_flashscore_filtered['2º gol'] == selected_2nd_goal
-    mask_2nd_goal_league = database_flashscore_filtered_league['2º gol'] == selected_2nd_goal
+    mask_2nd_goal = database_flashscore_filtered['2º gol'] == st.session_state.selected_2nd_goal
+    mask_2nd_goal_league = database_flashscore_filtered_league['2º gol'] == st.session_state.selected_2nd_goal
 
-if selected_3rd_goal == 'Todos':
+if st.session_state.selected_3rd_goal == 'Todos':
     mask_3rd_goal = database_flashscore_filtered['3º gol'].notnull()
     mask_3rd_goal_league = database_flashscore_filtered_league['3º gol'].notnull()
 else:
-    mask_3rd_goal = database_flashscore_filtered['3º gol'] == selected_3rd_goal
-    mask_3rd_goal_league = database_flashscore_filtered_league['3º gol'] == selected_3rd_goal
+    mask_3rd_goal = database_flashscore_filtered['3º gol'] == st.session_state.selected_3rd_goal
+    mask_3rd_goal_league = database_flashscore_filtered_league['3º gol'] == st.session_state.selected_3rd_goal
 
-if selected_4th_goal == 'Todos':
+if st.session_state.selected_4th_goal == 'Todos':
     mask_4th_goal = database_flashscore_filtered['4º gol'].notnull()
     mask_4th_goal_league = database_flashscore_filtered_league['4º gol'].notnull()
 else:
-    mask_4th_goal = database_flashscore_filtered['4º gol'] == selected_4th_goal
-    mask_4th_goal_league = database_flashscore_filtered_league['4º gol'] == selected_4th_goal
+    mask_4th_goal = database_flashscore_filtered['4º gol'] == st.session_state.selected_4th_goal
+    mask_4th_goal_league = database_flashscore_filtered_league['4º gol'] == st.session_state.selected_4th_goal
 
-selected_1st_goal = [selected_1st_goal] if selected_1st_goal else first_goal_filter
-selected_2nd_goal = [selected_2nd_goal] if selected_2nd_goal else second_goal_filter
-selected_3rd_goal = [selected_3rd_goal] if selected_3rd_goal else third_goal_filter
-selected_4th_goal = [selected_4th_goal] if selected_4th_goal else fourth_goal_filter
+st.session_state.selected_1st_goal = [st.session_state.selected_1st_goal] if st.session_state.selected_1st_goal else first_goal_filter
+st.session_state.selected_2nd_goal = [st.session_state.selected_2nd_goal] if st.session_state.selected_2nd_goal else second_goal_filter
+st.session_state.selected_3rd_goal = [st.session_state.selected_3rd_goal] if st.session_state.selected_3rd_goal else third_goal_filter
+st.session_state.selected_4th_goal = [st.session_state.selected_4th_goal] if st.session_state.selected_4th_goal else fourth_goal_filter
 
 with st.container():
-    col1, col2, col3, col4, col5 = st.columns([1,0.2,1,0.2,1])
+    col1, col2, col3, col4, col5 = st.columns([1,0.4,1,0.4,1])
 
     with col1:
         min_odd_home = np.float64(database_flashscore['Odd_H'].min())
         max_odd_home = np.float64(database_flashscore['Odd_H'].max())
 
-        selected_min_odd_home, selected_max_odd_home = st.slider("Selecione o intervalo da Odd Home:",
+        st.session_state.selected_min_odd_home, st.session_state.selected_max_odd_home = st.slider("Selecione o intervalo da Odd Home:",
                                                                 min_value=1.00,
                                                                 max_value=9.00,
                                                                 value=(1.00, 9.00))
@@ -207,7 +255,7 @@ with st.container():
         min_odd_away = np.float64(database_flashscore['Odd_A'].min())
         max_odd_away = np.float64(database_flashscore['Odd_A'].max())
 
-        selected_min_odd_away, selected_max_odd_away = st.slider("Selecione o intervalo da Odd Away:",
+        st.session_state.selected_min_odd_away, st.session_state.selected_max_odd_away = st.slider("Selecione o intervalo da Odd Away:",
                                                                 min_value=1.00,
                                                                 max_value=9.00,
                                                                 value=(1.00, 9.00))
@@ -216,24 +264,24 @@ with st.container():
         min_odd_over25 = np.float64(database_flashscore['Odd_Over25'].min())
         max_odd_over25 = np.float64(database_flashscore['Odd_Over25'].max())
 
-        selected_min_odd_over25, selected_max_odd_over25 = st.slider("Selecione o intervalo da Odd Over 2.5 gols:",
+        st.session_state.selected_min_odd_over25, st.session_state.selected_max_odd_over25 = st.slider("Selecione o intervalo da Odd Over 2.5 gols:",
                                                                 min_value=1.00,
                                                                 max_value=float(max_odd_over25),
                                                                 value=(1.00, float(max_odd_over25)))
 
-final_max_odd_home = selected_max_odd_home if selected_max_odd_home != 9 else max_odd_home
-mask_odd_home = (database_flashscore_filtered['Odd_H'] >= selected_min_odd_home) & (database_flashscore_filtered['Odd_H'] <= final_max_odd_home)
+final_max_odd_home = st.session_state.selected_max_odd_home if st.session_state.selected_max_odd_home != 9 else max_odd_home
+mask_odd_home = (database_flashscore_filtered['Odd_H'] >= st.session_state.selected_min_odd_home) & (database_flashscore_filtered['Odd_H'] <= final_max_odd_home)
 
-final_max_odd_away = selected_max_odd_away if selected_max_odd_away != 9 else max_odd_away
-mask_odd_away = (database_flashscore_filtered['Odd_A'] >= selected_min_odd_away) & (database_flashscore_filtered['Odd_A'] <= final_max_odd_away)
+final_max_odd_away = st.session_state.selected_max_odd_away if st.session_state.selected_max_odd_away != 9 else max_odd_away
+mask_odd_away = (database_flashscore_filtered['Odd_A'] >= st.session_state.selected_min_odd_away) & (database_flashscore_filtered['Odd_A'] <= final_max_odd_away)
 
 #mask_odd_home = (database_flashscore_filtered['Odd_H'] >= selected_min_odd_home) & (database_flashscore_filtered['Odd_H'] <= selected_max_odd_home)
 #mask_odd_away = (database_flashscore_filtered['Odd_A'] >= selected_min_odd_away) & (database_flashscore_filtered['Odd_A'] <= selected_max_odd_away)
-mask_odd_over25 = (database_flashscore_filtered['Odd_Over25'] >= selected_min_odd_over25) & (database_flashscore_filtered['Odd_Over25'] <= selected_max_odd_over25)
+mask_odd_over25 = (database_flashscore_filtered['Odd_Over25'] >= st.session_state.selected_min_odd_over25) & (database_flashscore_filtered['Odd_Over25'] <= st.session_state.selected_max_odd_over25)
 
-mask_odd_home_league = (database_flashscore_filtered_league['Odd_H'] >= selected_min_odd_home) & (database_flashscore_filtered_league['Odd_H'] <= final_max_odd_home)
-mask_odd_away_league = (database_flashscore_filtered_league['Odd_A'] >= selected_min_odd_away) & (database_flashscore_filtered_league['Odd_A'] <= final_max_odd_away)
-mask_odd_over25_league = (database_flashscore_filtered_league['Odd_Over25'] >= selected_min_odd_over25) & (database_flashscore_filtered_league['Odd_Over25'] <= selected_max_odd_over25)
+mask_odd_home_league = (database_flashscore_filtered_league['Odd_H'] >= st.session_state.selected_min_odd_home) & (database_flashscore_filtered_league['Odd_H'] <= final_max_odd_home)
+mask_odd_away_league = (database_flashscore_filtered_league['Odd_A'] >= st.session_state.selected_min_odd_away) & (database_flashscore_filtered_league['Odd_A'] <= final_max_odd_away)
+mask_odd_over25_league = (database_flashscore_filtered_league['Odd_Over25'] >= st.session_state.selected_min_odd_over25) & (database_flashscore_filtered_league['Odd_Over25'] <= st.session_state.selected_max_odd_over25)
 
 database_flashscore_filtered2 = database_flashscore_filtered[mask_1st_goal & mask_2nd_goal & mask_3rd_goal & mask_4th_goal & mask_odd_home & mask_odd_away & mask_odd_over25]
 database_flashscore_filtered_league2 = database_flashscore_filtered_league[mask_1st_goal_league & mask_2nd_goal_league & mask_3rd_goal_league & mask_4th_goal_league & mask_odd_home_league & mask_odd_away_league & mask_odd_over25_league]
@@ -326,7 +374,7 @@ fig_1st.add_trace(go.Bar(y=['Home', 'Away', 'Nenhum'],
 
 average_values_1st = [percent_1st_home_league, percent_1st_away_league, percent_1st_none_league]
 
-show_average_line = (len(selected_team_home) > 0 or len(selected_team_away) > 0)
+show_average_line = (len(st.session_state.selected_team_home) > 0 or len(st.session_state.selected_team_away) > 0)
 
 if show_average_line:
 
@@ -368,7 +416,7 @@ fig_2nd.add_trace(go.Bar(y=['Home', 'Away', 'Nenhum'],
 
 average_values_2nd = [percent_2nd_home_league, percent_2nd_away_league, percent_2nd_none_league]
 
-show_average_line = (len(selected_team_home) > 0 or len(selected_team_away) > 0)
+show_average_line = (len(st.session_state.selected_team_home) > 0 or len(st.session_state.selected_team_away) > 0)
 
 if show_average_line:
 
@@ -410,7 +458,7 @@ fig_3rd.add_trace(go.Bar(y=['Home', 'Away', 'Nenhum'],
 
 average_values_3rd = [percent_3rd_home_league, percent_3rd_away_league, percent_3rd_none_league]
 
-show_average_line = (len(selected_team_home) > 0 or len(selected_team_away) > 0)
+show_average_line = (len(st.session_state.selected_team_home) > 0 or len(st.session_state.selected_team_away) > 0)
 
 if show_average_line:
 
@@ -452,7 +500,7 @@ fig_4th.add_trace(go.Bar(y=['Home', 'Away', 'Nenhum'],
 
 average_values_4th = [percent_4th_home_league, percent_4th_away_league, percent_4th_none_league]
 
-show_average_line = (len(selected_team_home) > 0 or len(selected_team_away) > 0)
+show_average_line = (len(st.session_state.selected_team_home) > 0 or len(st.session_state.selected_team_away) > 0)
 
 if show_average_line:
 
