@@ -9,3 +9,4 @@ oauth2client==4.1.3
 google-api-python-client
 unidecode==1.2.0
 protobuf == 3.19.0
+altair==4.0.0
