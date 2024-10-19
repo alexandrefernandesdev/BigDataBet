@@ -30,9 +30,9 @@ with st.container():
         with col4:
             st.markdown(html_br, unsafe_allow_html=True)
 
+#url_database_flashscore = "https://github.com/futpythontrader/YouTube/blob/main/Bases_de_Dados/FlashScore/Base_de_Dados_FlashScore_v2.csv?raw=true"
+
 url_database_flashscore = "https://github.com/futpythontrader/YouTube/blob/main/Bases_de_Dados/FlashScore/Base_de_Dados_FlashScore_v2.csv?raw=true"
-
-
 database_flashscore = pd.read_csv(url_database_flashscore)
 database_flashscore['Date'] = pd.to_datetime(database_flashscore['Date']).dt.date
 
