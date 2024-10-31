@@ -31,10 +31,19 @@ with st.container():
             st.markdown(html_br, unsafe_allow_html=True)
 
 #url_database_flashscore = "https://github.com/futpythontrader/YouTube/blob/main/Bases_de_Dados/FlashScore/Base_de_Dados_FlashScore_v2.csv?raw=true"
+#database_flashscore = pd.read_csv(url_database_flashscore)
 
-url_database_flashscore = "https://github.com/futpythontrader/YouTube/blob/main/Bases_de_Dados/FlashScore/Base_de_Dados_FlashScore_v2.csv?raw=true"
-database_flashscore = pd.read_csv(url_database_flashscore)
+url_database_footystats1 = "https://github.com/futpythontrader/YouTube/blob/main/Bases_de_Dados/FootyStats/Base_de_Dados_FootyStats_(2022_2024).csv?raw=true"
+url_database_footystats2 = "https://github.com/futpythontrader/YouTube/blob/main/Bases_de_Dados/FootyStats/Base_de_Dados_FootyStats_(2006_2021).csv?raw=true"
+database_flashscore1 = pd.read_csv(url_database_footystats1)
+#database_flashscore2 = pd.read_csv(url_database_footystats2)
+#database_flashscore = pd.concat([database_flashscore1, database_flashscore2], ignore_index=True)
+database_flashscore = database_flashscore1
 database_flashscore['Date'] = pd.to_datetime(database_flashscore['Date']).dt.date
+
+#### MODIFICACOES FOOTYSTATS
+database_flashscore.rename(columns = {'Goals_H_Minutes':'Goals_Minutes_Home', 'Goals_A_Minutes':'Goals_Minutes_Away','Odd_H_FT':'Odd_H','Odd_A_FT':'Odd_A','Odd_D_FT':'Odd_D','Odd_Over25_FT':'Odd_Over25','Odd_Under25_FT':'Odd_Under25','Goals_H_FT':'Goals_H','Goals_A_FT':'Goals_A'}, inplace = True)
+
 
 league = sorted(set(database_flashscore['League'].tolist()))
 
@@ -669,21 +678,25 @@ def determine_first_goal_range(row, coluna):
         return 'No Goals'
     
     min_minute = min(row[coluna])
+
+    if '+' in min_minute:
+        min_minute = int(min_minute.split('+')[0])
     
-    if min_minute >= 0 and min_minute <= 15:
+    if int(min_minute) >= 0 and int(min_minute) <= 15:
         return '0 - 15'
-    elif min_minute >= 16 and min_minute <= 30:
+    elif int(min_minute) >= 16 and int(min_minute) <= 30:
         return '16 - 30'
-    elif min_minute >= 31 and min_minute <= 45:
+    elif int(min_minute) >= 31 and int(min_minute) <= 45:
         return '31 - 45'
-    elif min_minute >= 46 and min_minute <= 60:
+    elif int(min_minute) >= 46 and int(min_minute) <= 60:
         return '46 - 60'
-    elif min_minute >= 61 and min_minute <= 75:
+    elif int(min_minute) >= 61 and int(min_minute) <= 75:
         return '61 - 75'
-    elif min_minute >= 76:
+    elif int(min_minute) >= 76:
         return '76 - 90'
     else:
         return 'No Goals'
+
 
 
 # Aplicando a função para criar a coluna 'First_Goal_Home'
@@ -783,17 +796,33 @@ def calculate_stats(df):
     # Função auxiliar para encontrar o primeiro gol
     def first_goal_minutes(goals_list):
         if goals_list:
-            return min(goals_list)
+
+            min_minute = min(goals_list)
+
+            if '+' in min_minute:
+                min_minute = int(min_minute.split('+')[0])
+
+            return min_minute
         return None
     
     # Encontrar o primeiro gol para cada time
     df['First_Goal_Minutes_Home'] = df['Goals_Minutes_Home'].apply(first_goal_minutes)
     df['First_Goal_Minutes_Away'] = df['Goals_Minutes_Away'].apply(first_goal_minutes)
     
-    # Calcular média e desvio padrão
+    def process_minute(min_minute):
+        # Verifica se o valor é None ou uma string que representa None
+        if min_minute is None or str(min_minute).strip().lower() == 'none':
+            return None  # Ou um valor padrão que você desejar
+        min_minute_str = str(min_minute)
+        if '+' in min_minute_str:
+            return int(min_minute_str.split('+')[0])
+        return int(min_minute_str)
+
+    df['First_Goal_Minutes_Home'] = df['First_Goal_Minutes_Home'].apply(process_minute)
     mean_home = df['First_Goal_Minutes_Home'].mean()
     std_home = df['First_Goal_Minutes_Home'].std()
     
+    df['First_Goal_Minutes_Away'] = df['First_Goal_Minutes_Away'].apply(process_minute)
     mean_away = df['First_Goal_Minutes_Away'].mean()
     std_away = df['First_Goal_Minutes_Away'].std()
     
